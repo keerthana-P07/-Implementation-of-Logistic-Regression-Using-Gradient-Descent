@@ -23,62 +23,91 @@ RegisterNumber:  25011906
 */
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-#Load data
-data = pd.read_csv("C:/Users/acer/Downloads/50_Startups.csv")
-x = data["R&D Spend"].values
-y = data["Profit"].values
-#-----Feature scaling -----
-x_mean = np.mean(x)
-x_std = np.std(x)
-x = (x - x_mean) / x_std
-#Parameters
-w = 0.0
-b = 0.0
-alpha = 0.01
-epochs = 100
-n = len(x)
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
 
-losses = []
-#Gradient descent
+# ==============================
+# 1. Load Dataset
+# ==============================
+data = pd.read_csv(r"C:/Users/acer/Downloads/Placement_Data.csv")
+data.drop("sl_no", axis=1, inplace=True)
+
+# Encode target
+data['status'] = data['status'].map({'Placed': 1, 'Not Placed': 0})
+
+# One-hot encoding
+data = pd.get_dummies(data, drop_first=True)
+
+# ==============================
+# 2. Features & Target
+# ==============================
+X = data.drop('status', axis=1).values
+y = data['status'].values
+
+# ==============================
+# 3. Train–Test Split
+# ==============================
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42
+)
+
+# ==============================
+# 4. Feature Scaling
+# ==============================
+X_train = (X_train - X_train.mean(axis=0)) / X_train.std(axis=0)
+X_test  = (X_test  - X_test.mean(axis=0))  / X_test.std(axis=0)
+
+# ==============================
+# 5. Sigmoid
+# ==============================
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# ==============================
+# 6. Initialize Parameters
+# ==============================
+weights = np.zeros(X_train.shape[1])
+bias = 0
+learning_rate = 0.1      # increased
+epochs = 3000            # increased
+
+# ==============================
+# 7. Gradient Descent
+# ==============================
 for _ in range(epochs):
-    y_hat = w * x + b
-    loss = np.mean((y_hat - y) ** 2)
-    losses.append(loss)
-    
-    dw = (2/n) * np.sum((y_hat - y) * x)
-    db = (2/n) * np.sum(y_hat - y)
-    
-    w -= alpha * dw
-    b -= alpha * db
-    # Plot
-plt.figure(figsize=(12, 5))
+    linear = np.dot(X_train, weights) + bias
+    y_pred = sigmoid(linear)
 
-plt.subplot(1, 2, 1)
-plt.plot(losses)
-plt.xlabel("Iterations")
-plt.ylabel("Loss (MSE)")
-plt.title("Loss vs Iterations")
+    dw = (1 / len(y_train)) * np.dot(X_train.T, (y_pred - y_train))
+    db = (1 / len(y_train)) * np.sum(y_pred - y_train)
 
-plt.subplot(1, 2, 2)
-plt.scatter(x, y)
+    weights -= learning_rate * dw
+    bias -= learning_rate * db
 
-x_sorted = np.argsort(x)
-plt.plot(x[x_sorted], (w * x + b)[x_sorted], color='red')
+# ==============================
+# 8. Prediction
+# ==============================
+def predict(X):
+    linear = np.dot(X, weights) + bias
+    return np.where(sigmoid(linear) >= 0.5, 1, 0)
 
-plt.xlabel("R&D Spend (scaled)")
-plt.ylabel("Profit")
-plt.title("Linear Regression Fit")
+y_predicted = predict(X_test)
 
-plt.tight_layout()
-plt.show()
+# ==============================
+# 9. Evaluation
+# ==============================
+print("Accuracy:", accuracy_score(y_test, y_predicted) * 100, "%")
 
-print("Final weight (w):", w)
-print("Final bias (b):", b)
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_predicted))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_predicted))
 ```
 
 ## Output:
-<img width="887" height="398" alt="image" src="https://github.com/user-attachments/assets/6f12bd5d-7820-46cc-b04f-164bfb2f0ab2" />
+<img width="610" height="343" alt="image" src="https://github.com/user-attachments/assets/79d7905e-9a46-49ad-896f-f42b548ab6b0" />
+
 
 
 
